@@ -1,5 +1,6 @@
 # Django
 
+## Preparando ambiente
 
 Criar venv:  
 (Isolar as dependências com ambiente virtual)
@@ -14,11 +15,6 @@ Ativar venv (Windows):
 Ativar venv (Linux):
 ``` sh
 source venv/bin/activate
-```
-
-Desativar venv:
-``` sh
-deactivate
 ```
 
 Instalar Django no venv:
@@ -49,13 +45,6 @@ Criar projeto Django
 django-admin startproject setup .
 ```
 
-
-Alterar settings.py:
-``` py
-LANGUAGE_CODE = 'pt-br'
-TIME_ZONE = 'America/Sao_Paulo'
-```
-
 Executar o servidor:
 ``` sh
 python manage.py runserver
@@ -69,31 +58,6 @@ Parar execução:
 Ctrl + C
 ```
 
-SECRET_KEY
-* Instalar DotEnv:
-``` py
-pip install python-dotenv
- ```
-* Criar arquivo .env na pasta raiz
-* Remover a SECRET_KEY do arquivo settings.py
-* Preencher arquivo .env com a chave (sem aspas):
- ``` py
-SECRET_KEY = django-insecure-v(8j@a+t7iie...
-```
-* Importar dotenv em settings.py:
-``` py
-from dotenv import load_dotenv
-load_dotenv()
- ```
-* Em settings.py:
- ``` py
-SECRET_KEY = str(os.getenv('SECRET_KEY'))
- ```
-* Criar arquivo .gitignore
-* Copiar de gitignore.io os arquivos a serem ignorados  
-https://www.toptal.com/developers/gitignore/  
-https://www.toptal.com/developers/gitignore/api/django
-
 Visualizar comandos manage.py:
 ``` py
 python manage.py help
@@ -104,7 +68,59 @@ Criar App (no mesmo diretório que manage.py):
 python manage.py startapp nome_do_app
 ```
 
-Adicionar o app ao settings.py - INSTALLED_APPS
+---
+
+## Settings (setup settings.py)
+
+SECRET_KEY
+* Instalar DotEnv:
+``` py
+pip install python-dotenv
+ ```
+
+* Criar arquivo .env na pasta raiz
+* Remover a SECRET_KEY do arquivo settings.py
+* Preencher arquivo .env com a chave (sem aspas):
+ ``` py
+SECRET_KEY = django-insecure-v(8j@a+t7iie...
+```
+
+* Importar dotenv em settings.py:
+``` py
+from dotenv import load_dotenv
+load_dotenv()
+ ```
+
+* Em settings.py:
+ ``` py
+SECRET_KEY = str(os.getenv('SECRET_KEY'))
+ ```
+
+* Criar arquivo .gitignore
+* Copiar de [gitignore.io](https://www.toptal.com/developers/gitignore/)  os arquivos a serem ignorados - [gitignore.io - Django](https://www.toptal.com/developers/gitignore/api/django)  
+
+Alterar settings.py:
+``` py
+LANGUAGE_CODE = 'pt-br'
+TIME_ZONE = 'America/Sao_Paulo'
+```
+
+Adicionar o app ('meu_app.apps.MeuAppConfig') ao settings.py 
+``` py
+INSTALLED_APPS = [
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'meu_app.apps.MeuAppConfig',
+]
+```
+
+---
+
+## Templates
 
 Criar pasta templates na raiz
 	Criar arquivo index.html dentro da pasta templates
@@ -122,6 +138,7 @@ Configurar pasta de arquivos estáticos settings.py
 STATICFILES_DIRS = [
 	os.path.join(BASE_DIR, 'setup/static')
 ]
+
 STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 ```
 
@@ -146,56 +163,6 @@ Exemplos:
 <a href="{% url 'index' %}">
 ```
 
-Escrever a View
-(responsável pela exibição das páginas, renderizar)
-``` py
-from django.shortcuts import render
-
-def index(request):
-	return render(request, 'index.html')
-```
-
-Escrever URLs (responsável pelas rotas):  
-
-Criar arquivo urls.py dentro da pasta do app:
- ``` py
-from django.urls import path
-from meu_app.views import index
-
-urlpatterns = [
-	path('', index, name='index')
-	path('outra_pagina/', outra_pagina, name='outra_pagina')
-]
-```
-
-	No arquivo urls.py do setup:
-``` py
-from django.contrib import admin
-from django.urls import path, include
-
-urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', include('galeria.urls')),
-]
-```
-
-Criar migrações para banco de dados:
-``` py
-python manage.py makemigrations
-```
-
-Executar as migrações:
-``` py
-python manage.py migrate
-```
-
-Models - layout do banco de dados, com metadados adicionais.
-
-Após criar os models do app, criar as migrações:
-``` py
-python manage.py makemigrations polls
-```
-	
 DRY - Don't Repeat Yourself
 Arquivo base.html:
 ``` html
@@ -238,16 +205,76 @@ No arquivo base.html:
 </html>
 ```
 
-Instalar requirements:
-```py
-pip install -r requirements.txt
+---
+
+## Views
+
+Escrever a View
+(responsável pela exibição das páginas, renderizar)
+``` py
+from django.shortcuts import render
+
+def index(request):
+	return render(request, 'index.html')
 ```
+
+---
+
+## URLs
+
+Escrever URLs (responsável pelas rotas):  
+
+Criar arquivo urls.py dentro da pasta do app:
+ ``` py
+from django.urls import path
+from meu_app.views import index
+
+urlpatterns = [
+	path('', index, name='index')
+	path('outra_pagina/', outra_pagina, name='outra_pagina')
+]
+```
+
+No arquivo urls.py do setup:
+``` py
+from django.contrib import admin
+from django.urls import path, include
+
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('', include('meu_app.urls')),
+]
+```
+
+---
+
+## Banco de Dados
+
+Criar migrações para banco de dados:
+``` py
+python manage.py makemigrations
+```
+
+Executar as migrações:
+``` py
+python manage.py migrate
+```
+
+Models - layout do banco de dados, com metadados adicionais.
+
+Após criar os models do app, criar as migrações:
+``` py
+python manage.py makemigrations polls
+```
+
+---
+
+## Admin
 
 Criar super usuáiro Admin:
 ``` py
 python manage.py createsuperuser
 ```
-
 
 Cadastrar aplicação editável no site de administração:
 No arquivo meu_app/admin.py
