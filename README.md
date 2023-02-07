@@ -72,6 +72,8 @@ python manage.py startapp nome_do_app
 
 ## Settings (setup settings.py)
 
+### .ENV  
+
 SECRET_KEY
 * Instalar DotEnv:
 ``` py
@@ -148,23 +150,32 @@ python manage.py colletstatic
 ```
 
 Indicar no arquivo .html dependências de arquivos estáticos:
-``` py
+``` html
 {% load static %}
-```
-Exemplo: 
-``` html
-href="{% static '/styles/style.css' %}"
+<html>
+	<head>
+		...
+	</head>
+	<body>
+		...
+	</body>
+</html>
 ```
 
-Indicar links (urls) no arquivo .html:
-Exemplos:
+Carregar arquivos estáticos: 
 ``` html
-<a href="{% url 'outra_pagina' %}">
+<link rel="stylesheet" href="{% static '/styles/style.css' %}">
+<img src="{% static 'img/minha_imagem.png' %}" alt="">
+```
+
+Carregar links (urls):
+``` html
 <a href="{% url 'index' %}">
+<a href="{% url 'outra_pagina' %}">
 ```
 
-DRY - Don't Repeat Yourself
-Arquivo base.html:
+DRY - Don't Repeat Yourself  
+Arquivo **base.html**:
 ``` html
 <html>
 	<head>
@@ -176,7 +187,7 @@ Arquivo base.html:
 </html>
 ```
 
-Arquivo index.html:
+Arquivo **index.html**:
 ``` html
 {% extends 'base.html' %}
 {% load static %}
@@ -188,18 +199,20 @@ Arquivo index.html:
 Na pasta templates criar a pasta partials
 ```
 _nome.html
-_menu
-_footer
+_menu.html
+_footer.html
+_alerts.html
 ```
 	
-No arquivo base.html:
+No arquivo **index.html**:
 ``` html
 <html>
 	<head>
 		...
 	</head>
 	<body>
-		{% block content %} {% endblock %}
+		{% include 'partials/_menu.html' %}
+		...
 		{% include 'partials/_footer.html' %}
 	</body>
 </html>
@@ -216,6 +229,9 @@ from django.shortcuts import render
 
 def index(request):
 	return render(request, 'index.html')
+
+def outra_pagina(request):
+	return render(request, 'outra_pagina.html')
 ```
 
 ---
@@ -227,7 +243,7 @@ Escrever URLs (responsável pelas rotas):
 Criar arquivo urls.py dentro da pasta do app:
  ``` py
 from django.urls import path
-from meu_app.views import index
+from meu_app.views import index, outra_pagina
 
 urlpatterns = [
 	path('', index, name='index')
@@ -250,6 +266,35 @@ urlpatterns = [
 
 ## Banco de Dados
 
+Instalar driver PostgresSQL no venv:
+``` sh
+pip install psycopg2
+pip install psycopg2-binary
+```
+
+
+Em settings.py
+``` py
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'OPTIONS':{
+            'options': '-c search_path=meu_schema'
+        },
+        'HOST': 'IP_DO_SERVIDOR',
+        'PORT': 'PORTA_DO_SERVIDOR',
+        'NAME': 'NOME_DO_BANCO',
+        'USER': 'USUARIO_DO_BANCO',
+        'PASSWORD': str(os.getenv('DB_PASS')),
+    }
+}
+```
+
+Arquivo **.env**
+``` py
+DB_PASS=senha_do_banco
+```
+
 Criar migrações para banco de dados:
 ``` py
 python manage.py makemigrations
@@ -260,19 +305,109 @@ Executar as migrações:
 python manage.py migrate
 ```
 
-Models - layout do banco de dados, com metadados adicionais.
+## Models
+Layout do banco de dados, com metadados adicionais.  
+Cada atributo do model representa um campo no banco de dados.
+
+Arquivo **models.py**
+``` py
+class MinhaTabela(models.Model):
+	campo_texto = models.CharField(max_length=200)
+	campo_caixa_texto = models.TextField()
+	campo_inteiro = models.IntegerFiels()
+	campo_data = models.DateField()
+	campo_data = models.DateTimeField(default=datetime.now, blank=True)
+	campo_logico = models.BooleanField()
+	campo_chave_estrangeira = models.ForeignKey('Outra_Classe', on_delete=models.SET_NULL, null=True, blank=True)
+```
 
 Após criar os models do app, criar as migrações:
-``` py
-python manage.py makemigrations polls
+``` sh
+python manage.py makemigrations meu_app
 ```
+
+Migrar as tabelas para o banco
+``` sh
+python manage.py migrate
+```
+
+### Exibir dados do banco  
+Caso apresente o erro "Class 'Minha_Classe' has no 'objects' member", instalar:
+```sh
+pip install pylint-django
+```
+
+E em settings.json, adicionar:
+```json
+"python.linting.pylintArgs": [
+	"--load-plugins=pylint_django"
+],
+```
+
+No arquivo **views.py**
+```py
+from django.shortchuts import render
+from .models import Minha_Classe
+
+def index(request):
+	objetos = Minha_Classe.objects.all()
+
+	dados = {
+		'objetos': objetos
+	}
+	return render(request, 'index.html', dados)
+```
+
+No arquivo **.html**
+``` html
+<div class="container">
+	<div class="row">
+		{% if objetos %} <!-- Se o objeto não estiver vazio -->
+		{% for objeto in objetos %}
+			<a href="{% url 'minha_pagina' objeto.id %}">
+				<h1>{{ objeto.campo_texto }}</h1>
+			</a>
+		{% endfor %}
+		{% else %}
+
+		{% endif %}
+	</div>
+</div>
+```
+
+No arquivo **urls.py**
+```py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+	path('', views.index, name='index'),
+	path('int:minha_view_id>', views.minha_view, name='minha_view')
+]
+```
+
+No arquivo **views.py**:
+```py
+from django.shortcuts import render, get_list_or_404, get_object_or_404
+from .models import Minha_Classes
+
+def minha_view(request, minha_view_id):
+	minha_view = get_object_or_404(Minha_Classe, pk=minha_view_id)
+
+	view_a_exibir = {
+		'view': minha_view
+	}
+
+	return render(request, 'meu_arquivo.html', view_a_exibir)
+```
+
 
 ---
 
 ## Admin
 
 Criar super usuáiro Admin:
-``` py
+``` sh
 python manage.py createsuperuser
 ```
 
@@ -280,7 +415,6 @@ Cadastrar aplicação editável no site de administração:
 No arquivo meu_app/admin.py
 ``` py
 from django.contrib import admin
-
 from .models import Classe_Model
 
 admin.site.register(Classe_Model)
