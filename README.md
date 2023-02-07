@@ -1,43 +1,51 @@
 # Django
 
 
-Criar venv: (Isolar as dependências com ambiente virtual)
-``` py
+Criar venv:  
+(Isolar as dependências com ambiente virtual)
+``` sh
 virtualenv venv
 ```
 Ativar venv (Windows):
-``` py
+``` sh
 .\venv\Scripts\activate
 ```
 
 Ativar venv (Linux):
-``` py
+``` sh
 source venv/bin/activate
 ```
 
 Desativar venv:
-``` py
+``` sh
 deactivate
 ```
 
 Instalar Django no venv:
-``` py
+``` sh
 pip install django
 ```
 
-Gerar arquivo de dependências no venv
-(executar sempre que houver uma nova instalação):
-``` py
+Gerar arquivo de dependências no venv  
+(executar sempre que houver uma nova instalação)  
+(retirar as versões para instalar sempre a mais recente):  
+``` sh
 pip freeze > requirements.txt
 ```
 
+Instalar dependências a partir do requirements.txt:
+``` sh
+pip install -r requirements.txt
+```
+
 Visualizar comandos Django:
-``` py
+``` sh
 django-admin help
 ```
 
-Criar projeto Django (sem o ponto no final do comando, o Django irá criar uma subpasta 'setup' ou 'config'):
-``` py
+Criar projeto Django  
+(sem o ponto no final do comando, o Django irá criar uma subpasta 'setup'):
+``` sh
 django-admin startproject setup .
 ```
 
@@ -49,11 +57,12 @@ TIME_ZONE = 'America/Sao_Paulo'
 ```
 
 Executar o servidor:
-``` py
+``` sh
 python manage.py runserver
 ```
 
-Acessar: http://127.0.0.1:8000/
+Acessar:  
+http://127.0.0.1:8000/
 
 Parar execução:
 ```
