@@ -218,6 +218,14 @@ No arquivo **index.html**:
 </html>
 ```
 
+Campo de busca:
+``` html
+<form action="{% url 'buscar' %}">
+	<input type="text" name="buscar" placeholder="buscar">
+	<button type="submit"></button>
+</form>
+```
+
 ---
 
 ## Views
@@ -255,11 +263,13 @@ No arquivo urls.py do setup:
 ``` py
 from django.contrib import admin
 from django.urls import path, include
+from django.conf import settings
+from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('meu_app.urls')),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) # Utilizando arquivos de mídia
 ```
 
 ---
@@ -319,7 +329,26 @@ class MinhaTabela(models.Model):
 	campo_data = models.DateTimeField(default=datetime.now, blank=True)
 	campo_logico = models.BooleanField()
 	campo_chave_estrangeira = models.ForeignKey('Outra_Classe', on_delete=models.SET_NULL, null=True, blank=True)
+	campo_imagem = models.ImageField(upload_to='imagens/%d/%m/%Y/', blank=True) # Caminho em que será salva a imagem (neste exemplo, subdividido por dia, mês e ano)
+	publicado = models.BooleanField(default=False)
+
+	def __str__(self):
+		return self.campo_texto # Altera o campo a ser exibido quando o objeto for referenciado
 ```
+
+Para utilizar o campo de imagens:
+* Acrescentar o arquivo **settings.py**:
+``` py
+# Media
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+MEDIA_URL = '/media/'
+```
+
+* Instalar Pillow
+``` sh
+pip install pillow
+```
+
 
 Após criar os models do app, criar as migrações:
 ``` sh
@@ -352,6 +381,12 @@ from .models import Minha_Classe
 def index(request):
 	objetos = Minha_Classe.objects.all()
 
+	# Opção para filtar campos a serem exibidos
+	# objetos = Minha_Classe.objects.filter(publicado=True)
+
+	# Opção para ordenar a apresentação (-decrescente)
+	# objetos = Minha_Classe.objects.order_by('-nome_campo').filter(publicado=True)
+
 	dados = {
 		'objetos': objetos
 	}
@@ -363,13 +398,15 @@ No arquivo **.html**
 <div class="container">
 	<div class="row">
 		{% if objetos %} <!-- Se o objeto não estiver vazio -->
-		{% for objeto in objetos %}
-			<a href="{% url 'minha_pagina' objeto.id %}">
-				<h1>{{ objeto.campo_texto }}</h1>
-			</a>
-		{% endfor %}
+			{% for objeto in objetos %}
+				<a href="{% url 'minha_pagina' objeto.id %}">
+					<h1>{{ objeto.campo_texto }}</h1>
+				</a>
+				<!-- Exibir imagem -->
+				<img src="{{ objeto.campo_imagem.url }}">
+			{% endfor %}
 		{% else %}
-
+			<p>Objeto não encontrado</p>
 		{% endif %}
 	</div>
 </div>
@@ -383,6 +420,7 @@ from . import views
 urlpatterns = [
 	path('', views.index, name='index'),
 	path('int:minha_view_id>', views.minha_view, name='minha_view')
+	path('busca', views.buscar, name='buscar') # Página de busca
 ]
 ```
 
@@ -390,6 +428,9 @@ No arquivo **views.py**:
 ```py
 from django.shortcuts import render, get_list_or_404, get_object_or_404
 from .models import Minha_Classes
+
+def index(request):
+	return render(request, 'index.html')
 
 def minha_view(request, minha_view_id):
 	minha_view = get_object_or_404(Minha_Classe, pk=minha_view_id)
@@ -399,8 +440,39 @@ def minha_view(request, minha_view_id):
 	}
 
 	return render(request, 'meu_arquivo.html', view_a_exibir)
+
+def buscar(request):
+	lista_objetos = Minha_Classe.objects.order_by('-nome_campo').filter(publicado=True)
+
+	if 'buscar' in request.GET:
+		campo_a_buscar = request.GET['buscar']
+		if buscar:
+			lista_objetos = lista_receitas.filter(campo_texto__icontains=campo_a_buscar)
+	
+	dados = {
+		'objetos': lista_objetos
+	}
+
+	return render(request, 'buscar.html', dados)
+
 ```
 
+### Integrar modelos
+No arquivo **models.py**
+``` py
+from outra_tabela.models import Minha_Classe
+
+class MinhaTabela(models.Model):
+	campo_outra_tabela = models.ForeignKey(Minha_Classe, on_dele=models.CASCADE) # Campo que será chave estrangeira
+	campo_texto = models.CharField(max_length=200)
+	campo_caixa_texto = models.TextField()
+	campo_inteiro = models.IntegerFiels()
+	campo_data = models.DateField()
+	campo_data = models.DateTimeField(default=datetime.now, blank=True)
+	campo_logico = models.BooleanField()
+```
+
+Realizar ```makemigrations``` e ```migrate```
 
 ---
 
@@ -418,4 +490,20 @@ from django.contrib import admin
 from .models import Classe_Model
 
 admin.site.register(Classe_Model)
+```
+
+Editar display Admin (arquivo meu_app - admin.py)
+``` py
+from django.contrib import admin
+from .models import MinhaTabela
+
+class ListandoNomes(admin.ModelAdmin):
+	list_display = ('id', 'campo_texto', 'publicado') # Campos a serem exibidos (campos do model)
+	list_display_links = ('id', 'campo_texto') # Campos de links
+	search_fields = ('nome_campo',) # Pesquisa
+	list_filter = ('nome_campo',) # Filtro
+	list_editable = ('pulicado',) # Campo editável
+	list_per_page = 10 # Paginação
+
+admin.site.register(MinhaTabela, ListandoNomes)
 ```
