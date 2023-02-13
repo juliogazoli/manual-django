@@ -507,3 +507,159 @@ class ListandoNomes(admin.ModelAdmin):
 
 admin.site.register(MinhaTabela, ListandoNomes)
 ```
+
+
+
+---
+---
+---
+
+### Criar botão Excluir  
+arquivo .html
+``` html
+<a href="{% url 'deleta_item' item.id %}" type="button" class="btn btn-danger"> Excluir</a>
+```
+
+arquivo url.py
+``` py
+path('deleta/<int:item_id>', views.deleta_item, name='deleta_item'),
+```
+
+arquivo views.py
+``` py
+def deleta_item(request, item_id):
+	item = get_object_or_404(Minha_Classe, pk=item_id)
+	item.delete()
+	return redirect('index')
+```
+
+### Criar botão Editar
+arquivo .html
+``` html
+<a href="{% url 'edita_item' item.id %}" type="button" class="btn btn-info"> Editar</a>
+```
+
+arquivo url.py
+``` py
+path('edita/<int:item_id>', views.edita_item, name='edita_item'),
+path('atualiza_item', views.atualiza_item, name='atualiza_item'),
+```
+
+arquivo views.py
+``` py
+def edita_item(request, item_id):
+	item = get_object_or_404(Minha_Classe, pk=item_id)
+	item_a_editar = { 'item': item }
+	return render(request, 'edita_item.html', item_a_editar)
+
+def atualiza_item(request):
+	if request.method == 'POST':
+		item_id = request.POST['item_id']
+		i = Minha_Classe.objects.get(pk=item_id)
+		i.nome_item = request.POST['nome_item']
+		i.campo_texto = request.POST['campo_texto']
+		if imagem in request.FILES:
+			i.imagem = request.FILES['imagem']
+		i.save()
+		return redirect('index')
+```
+
+arquivo edita_item.html
+``` html
+<form action="{% url 'atualiza_receita' %}">
+```
+
+
+---  
+### Dividir views
+
+* Criar pasta views
+* Criar arquivos .py referente às views
+* Arquivo urls.py
+``` py
+from views import *
+
+urlpatterns = [
+	path('', index, name='index'),
+	path('buscar', buscar, name='buscar'),
+]
+```
+* Criar arquivo \_\_init__.py
+* No arquivo \_\_init__.py
+``` py
+from .arquivo_view import *
+```
+
+### Pasta apps
+
+* Criar pasta apps na raiz do projeto  
+* Mover a pasta de cada app para pasta apps
+* Alterar arquivo settings.py
+``` py
+import os, sys
+
+PROJECT_ROOT = os.path.dirname(__file__)
+sys.path.insert(0, os.path.join(PROJECT_ROOT, '../apps'))
+```
+
+---
+
+### Paginação
+
+arquivo views.py
+``` py
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+def index(request):
+	objetos = Minha_Classe.objects.order_by('-campo_data').filter(pulicado=True)
+	paginator = Paginator(objetos, 10)
+	page = request.GET.get('page')
+	objetos_por_pagina = paginator.get_page(page)
+
+	dados = {
+		'objetos': objetos_por_pagina
+	}
+	return render(request, 'index.html', dados)
+```
+
+arquivo index.html
+``` html
+<!-- ##### Pagination ##### -->
+    <section class="top-catagory-area section-padding-20-0">
+        <div class="container">
+			{% if objetos.has_other_pages %}
+            <ul class="pagination">
+				{% if objetos.has_previous %}
+                <li class="page-item">
+                    <a href="?page={{ objetos.previous_page_number }}" class="page-link">&laquo;</a>
+                </li>
+				{% else %}
+                <li class="page-item disabled">
+                    <a class="page-link">&laquo;</a>
+                </li>
+				{% endif %}
+				{% for pagina in objetos.paginator.page_range %}
+				{% if objeto.number == pagina %}
+                <li class="page-item active">
+                    <a class="page-link">{{ pagina }}</a>
+                </li>
+				{% else %}
+                <li class="page-item">
+                    <a href="?page={{ pagina }}" class="page-link">{{ pagina }}</a>
+                </li>
+				{% endif %}
+				{% endfor %}
+				{% if objetos.has_next %}
+                <li class="page-item">
+                    <a href="?page={{ objetos.next_page_number }}" class="page-link">&raquo;</a>
+                </li>
+				{% else %}
+                <li class="page-item disabled">
+                    <a class="page-link">&raquo;</a>
+                </li>
+				{% endif %}
+            </ul>
+        </div>
+    </section>
+    <!-- ##### Pagination End ##### -->
+```
