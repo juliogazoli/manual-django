@@ -150,7 +150,7 @@ python manage.py colletstatic
 ```
 
 Indicar no arquivo .html dependências de arquivos estáticos:
-``` html
+``` django
 {% load static %}
 <html>
 	<head>
@@ -163,20 +163,20 @@ Indicar no arquivo .html dependências de arquivos estáticos:
 ```
 
 Carregar arquivos estáticos: 
-``` html
+``` django
 <link rel="stylesheet" href="{% static '/styles/style.css' %}">
 <img src="{% static 'img/minha_imagem.png' %}" alt="">
 ```
 
 Carregar links (urls):
-``` html
+``` django
 <a href="{% url 'index' %}">
 <a href="{% url 'outra_pagina' %}">
 ```
 
 DRY - Don't Repeat Yourself  
 Arquivo **base.html**:
-``` html
+``` django
 <html>
 	<head>
 		...
@@ -188,7 +188,7 @@ Arquivo **base.html**:
 ```
 
 Arquivo **index.html**:
-``` html
+``` django
 {% extends 'base.html' %}
 {% load static %}
 {% block content %}
@@ -205,7 +205,7 @@ _alerts.html
 ```
 	
 No arquivo **index.html**:
-``` html
+``` django
 <html>
 	<head>
 		...
@@ -219,7 +219,7 @@ No arquivo **index.html**:
 ```
 
 Campo de busca:
-``` html
+``` django
 <form action="{% url 'buscar' %}">
 	<input type="text" name="buscar" placeholder="buscar">
 	<button type="submit"></button>
@@ -361,7 +361,7 @@ python manage.py migrate
 ```
 
 ### Exibir dados do banco  
-Caso apresente o erro "Class 'Minha_Classe' has no 'objects' member", instalar:
+Caso apresente o erro "Class 'MinhaClasse' has no 'objects' member", instalar:
 ```sh
 pip install pylint-django
 ```
@@ -376,16 +376,16 @@ E em settings.json, adicionar:
 No arquivo **views.py**
 ```py
 from django.shortchuts import render
-from .models import Minha_Classe
+from .models import MinhaClasse
 
 def index(request):
-	objetos = Minha_Classe.objects.all()
+	objetos = MinhaClasse.objects.all()
 
 	# Opção para filtar campos a serem exibidos
-	# objetos = Minha_Classe.objects.filter(publicado=True)
+	# objetos = MinhaClasse.objects.filter(publicado=True)
 
 	# Opção para ordenar a apresentação (-decrescente)
-	# objetos = Minha_Classe.objects.order_by('-nome_campo').filter(publicado=True)
+	# objetos = MinhaClasse.objects.order_by('-nome_campo').filter(publicado=True)
 
 	dados = {
 		'objetos': objetos
@@ -394,7 +394,7 @@ def index(request):
 ```
 
 No arquivo **.html**
-``` html
+``` django
 <div class="container">
 	<div class="row">
 		{% if objetos %} <!-- Se o objeto não estiver vazio -->
@@ -427,13 +427,13 @@ urlpatterns = [
 No arquivo **views.py**:
 ```py
 from django.shortcuts import render, get_list_or_404, get_object_or_404
-from .models import Minha_Classes
+from .models import MinhaClasses
 
 def index(request):
 	return render(request, 'index.html')
 
 def minha_view(request, minha_view_id):
-	minha_view = get_object_or_404(Minha_Classe, pk=minha_view_id)
+	minha_view = get_object_or_404(MinhaClasse, pk=minha_view_id)
 
 	view_a_exibir = {
 		'view': minha_view
@@ -442,7 +442,7 @@ def minha_view(request, minha_view_id):
 	return render(request, 'meu_arquivo.html', view_a_exibir)
 
 def buscar(request):
-	lista_objetos = Minha_Classe.objects.order_by('-nome_campo').filter(publicado=True)
+	lista_objetos = MinhaClasse.objects.order_by('-nome_campo').filter(publicado=True)
 
 	if 'buscar' in request.GET:
 		campo_a_buscar = request.GET['buscar']
@@ -460,10 +460,10 @@ def buscar(request):
 ### Integrar modelos
 No arquivo **models.py**
 ``` py
-from outra_tabela.models import Minha_Classe
+from outra_tabela.models import MinhaClasse
 
 class MinhaTabela(models.Model):
-	campo_outra_tabela = models.ForeignKey(Minha_Classe, on_dele=models.CASCADE) # Campo que será chave estrangeira
+	campo_outra_tabela = models.ForeignKey(MinhaClasse, on_dele=models.CASCADE) # Campo que será chave estrangeira
 	campo_texto = models.CharField(max_length=200)
 	campo_caixa_texto = models.TextField()
 	campo_inteiro = models.IntegerFiels()
@@ -508,34 +508,233 @@ class ListandoNomes(admin.ModelAdmin):
 admin.site.register(MinhaTabela, ListandoNomes)
 ```
 
-
-
 ---
+
+## Forms
+
+Criar arquivo **forms.py** na pasta do app
+
+``` py
+from django import forms
+from tempus_dominus.widgets import DatePicker # Verificar instalação tempus dominus
+from meu_app.escolhas import lista_de_escolhas
+
+class MinhaClasseForms(forms.Form):
+	campo_texto_1 = forms.CharField(label='Nome a ser exibido', max_length=100)
+	campo_texto_2 = forms.CharField(label='Nome a ser exibido', max_length=100)
+	campo_data = form.DateField(label='Nome a ser exibido', widget=DatePicker()) # tempus dominus
+	campo_desabilitado = form.CharField(label='Nome a ser exibido', max_length=100, disable=True)
+	campo_escolhas = form.ChoiceField(label='Nome a ser exibido', choices=lista_de_escolhas)
+	campo_email = forms.EmailField(label='Nome a ser exibido', max_lenght=150),
+	campo_texto = forms.CharField( # Campo de escolhas
+		label='Nome a ser exibido',
+		max_lenght=200,
+		widget=forms.Textarea(),
+		required=False
+	)
+
+	# Validação de formulário
+	def clean_campo_texto_1(self):
+		campo_texto_1 = self.cleaned_data.get('campo_texto_1')
+		if any(char.isdigit() for char in campo_texto_1):
+			raise forms.ValidationError('Não inclua números')
+		else:
+			return campo_texto_1
+
+	def clean(self):
+		campo_texto_1 = self.cleaned_data.get('campo_texto_1')
+		campo_texto_2 = self.cleaned_data.get('campo_texto_2')
+		lista_de_erros = {}
+		
+		return self.cleaned_data
+```
+
+Arquivo **validation.py**:
+``` py
+def campo_texto_1_campo_texto_2_iguais(campo_texto_1, campo_texto_2, lista_de_erros):
+	if campo_texto_1 == campo_texto_2:
+		lista_de_erros['campo_texto_2'] = 'Campos não podem ser iguais'
+
+def campo_tem_algum_numero(valor_campo, nome_campo, lista_de_erros):
+	if any(char.isdigit() for char in campo_texto_1):
+			raise forms.ValidationError('Não inclua números')
+```
+
+No arquivo **escolhas.py**:
+``` py
+lista_de_escolhas = {
+	(1, 'Primeira opção'),
+	(2, 'Segunda opção'),
+	(3, 'Terceira opção'),
+}
+```
+
+No arquivo **views.py**:
+
+``` py
+from django.shortcuts import render
+from meu_app.forms import MinhaClasseForms
+
+def index(request):
+	form = PassagemForms()
+	contexto = {'form':form}
+	return render(request, 'index.html', contexto)
+
+def consulta(request):
+	if request.method == 'POST':
+		form = MinhaClasseForms(request.POST)
+		if form.is_valid():
+			contexto = {'form':form}
+			return render(request, 'consulta.html', contexto)
+		else:
+			print('Form inválido')
+			contexto = {'form':form}
+			return render(request, 'index.html', contexto)
+```
+
+No arquivo **urls.py**:
+
+``` py
+from django.urls import path
+from . import views
+
+urlpatterns = [
+	path('', views.index, name='index'),
+	path('consulta', views.consulta, name='consulta')
+]
+```
+
+No arquivo **index.html**:
+
+``` django
+{% extends "base.html" %}
+{% block content %}
+{% load widget_tweaks %} <!-- Verificar instalação Widget Tweaks -->
+	<section class="container col8">
+		<form action="{% url 'consulta' %}" method="post">
+			{% csrf_token %}
+			{% for field in form.visible_fields %}
+				<div class="form-group">
+					<label for="{{ field.id_for_label }}"> {{ field.label }} </label>
+					{{ field|add_class:'form-control' }} <!-- Adiciona classe aos campos -->
+				</div>
+				{% for error in field.errors %}
+					<section class="alert alert-danger" role="alert">
+						{{ field.errors }}
+					</section>
+				{% endfor %}
+			{% endfor %}
+			<input type="submit" value="Ok">
+		</form>
+	</section>
+{% endblock %}
+```
+
+No arquivo **consulta.html**:
+
+``` django
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Consulta</title>
+</head>
+<body>
+	<p>Campo 1: {{ form.campo_texto_1.value }}</p>
+	<p>Campo 2: {{ form.campo_texto_2.value }}</p>
+	<p>Campo 2: {{ form.campo_data.value }}</p>
+</body>
+</html>
+```
+
+### [Django Tempus Dominus](https://pypi.org/project/django-tempus-dominus/)
+
+``` sh
+pip install django-tempus-dominus
+```
+
+arquivo settings.py
+``` py
+INSTALLED_APPS = [
+	...
+	'tempus_dominus'
+	...
+]
+
+TEMPUS_DOMINUS_LOCALIZE = True
+```
+
+``` django
+<html>
+  <head>
+    {# Include FontAwesome; required for icon display #}
+    <link rel="stylesheet" href="https://netdna.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.css">
+
+    {# Include Bootstrap 4 and jQuery #}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+
+    {# Django Tempus Dominus assets are included in `{{ form.media }}` #}
+    {{ form.media }}
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="row">
+        <div class="col">
+          <form method="post" action=".">
+            {% csrf_token %}
+            {{ form.as_p }}
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
+```
+
+### [Djago Widget Tweaks](https://pypi.org/project/django-widget-tweaks/)
+
+``` sh
+pip install django-widget-tweaks
+```
+
+arquivo settings.py
+``` py
+INSTALLED_APPS = [
+	...
+	'widget_tweaks',
+	...
+]
+```
+
 ---
 ---
 
 ### Criar botão Excluir  
-arquivo .html
-``` html
+arquivo **.html**
+``` django
 <a href="{% url 'deleta_item' item.id %}" type="button" class="btn btn-danger"> Excluir</a>
 ```
 
-arquivo url.py
+arquivo **url.py**
 ``` py
 path('deleta/<int:item_id>', views.deleta_item, name='deleta_item'),
 ```
 
-arquivo views.py
+arquivo **views.py**
 ``` py
 def deleta_item(request, item_id):
-	item = get_object_or_404(Minha_Classe, pk=item_id)
+	item = get_object_or_404(MinhaClasse, pk=item_id)
 	item.delete()
 	return redirect('index')
 ```
 
 ### Criar botão Editar
 arquivo .html
-``` html
+``` django
 <a href="{% url 'edita_item' item.id %}" type="button" class="btn btn-info"> Editar</a>
 ```
 
@@ -548,14 +747,14 @@ path('atualiza_item', views.atualiza_item, name='atualiza_item'),
 arquivo views.py
 ``` py
 def edita_item(request, item_id):
-	item = get_object_or_404(Minha_Classe, pk=item_id)
+	item = get_object_or_404(MinhaClasse, pk=item_id)
 	item_a_editar = { 'item': item }
 	return render(request, 'edita_item.html', item_a_editar)
 
 def atualiza_item(request):
 	if request.method == 'POST':
 		item_id = request.POST['item_id']
-		i = Minha_Classe.objects.get(pk=item_id)
+		i = MinhaClasse.objects.get(pk=item_id)
 		i.nome_item = request.POST['nome_item']
 		i.campo_texto = request.POST['campo_texto']
 		if imagem in request.FILES:
@@ -565,7 +764,7 @@ def atualiza_item(request):
 ```
 
 arquivo edita_item.html
-``` html
+``` django
 <form action="{% url 'atualiza_receita' %}">
 ```
 
@@ -577,7 +776,7 @@ arquivo edita_item.html
 * Criar arquivos .py referente às views
 * Arquivo urls.py
 ``` py
-from views import *
+from .views import *
 
 urlpatterns = [
 	path('', index, name='index'),
@@ -611,7 +810,7 @@ arquivo views.py
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 def index(request):
-	objetos = Minha_Classe.objects.order_by('-campo_data').filter(pulicado=True)
+	objetos = MinhaClasse.objects.order_by('-campo_data').filter(pulicado=True)
 	paginator = Paginator(objetos, 10)
 	page = request.GET.get('page')
 	objetos_por_pagina = paginator.get_page(page)
@@ -623,7 +822,7 @@ def index(request):
 ```
 
 arquivo index.html
-``` html
+``` django
 <!-- ##### Pagination ##### -->
     <section class="top-catagory-area section-padding-20-0">
         <div class="container">
@@ -639,7 +838,7 @@ arquivo index.html
                 </li>
 				{% endif %}
 				{% for pagina in objetos.paginator.page_range %}
-				{% if objeto.number == pagina %}
+				{% if objetos.number == pagina %}
                 <li class="page-item active">
                     <a class="page-link">{{ pagina }}</a>
                 </li>
@@ -659,6 +858,7 @@ arquivo index.html
                 </li>
 				{% endif %}
             </ul>
+			{% endif %}
         </div>
     </section>
     <!-- ##### Pagination End ##### -->
