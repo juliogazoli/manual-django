@@ -518,6 +518,7 @@ Criar arquivo **forms.py** na pasta do app
 from django import forms
 from tempus_dominus.widgets import DatePicker # Verificar instalação tempus dominus
 from meu_app.escolhas import lista_de_escolhas
+from meu_app.validation import * # Verificar arquivo validation.py
 
 class MinhaClasseForms(forms.Form):
 	campo_texto_1 = forms.CharField(label='Nome a ser exibido', max_length=100)
@@ -534,30 +535,31 @@ class MinhaClasseForms(forms.Form):
 	)
 
 	# Validação de formulário
-	def clean_campo_texto_1(self):
-		campo_texto_1 = self.cleaned_data.get('campo_texto_1')
-		if any(char.isdigit() for char in campo_texto_1):
-			raise forms.ValidationError('Não inclua números')
-		else:
-			return campo_texto_1
-
 	def clean(self):
 		campo_texto_1 = self.cleaned_data.get('campo_texto_1')
 		campo_texto_2 = self.cleaned_data.get('campo_texto_2')
 		lista_de_erros = {}
-		
+		campo_tem_algum_numero(campo_texto_1, 'campo_texto_1', lista_de_erros)
+		campo_tem_algum_numero(campo_texto_2, 'campo_texto_2', lista_de_erros)
+		campo_texto_1_campo_texto_2_iguais(campo_texto_1, campo_texto_2, lista_de_erros)
+		if lista_de_erros is not None:
+			for erro in lista_de_erros:
+				mensagem_erro = lista_de_erros[erro]
+				self.add_error(erro, mensagem_erro)
 		return self.cleaned_data
 ```
 
 Arquivo **validation.py**:
 ``` py
 def campo_texto_1_campo_texto_2_iguais(campo_texto_1, campo_texto_2, lista_de_erros):
+	""" Verifica se campo_texto_1 e campo_texto_2 são iguais """
 	if campo_texto_1 == campo_texto_2:
 		lista_de_erros['campo_texto_2'] = 'Campos não podem ser iguais'
 
 def campo_tem_algum_numero(valor_campo, nome_campo, lista_de_erros):
-	if any(char.isdigit() for char in campo_texto_1):
-			raise forms.ValidationError('Não inclua números')
+	""" Verifica se possui algum dígito numérico """
+	if any(char.isdigit() for char in valor_campo):
+			lista_de_erros[nome_campo] = 'Não inclua números neste campo'
 ```
 
 No arquivo **escolhas.py**:
