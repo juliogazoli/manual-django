@@ -132,9 +132,17 @@ No arquivo settings.py, TEMPLATES:
 ``` py
 from pathlib import Path, os
 
-'DIRS': [os.path.join(BASE_DIR, 'templates')]
+'DIRS': [os.path.join(BASE_DIR, 'templates')],
 ```
-	
+
+Ou:
+
+``` py
+'DIRS': [
+            BASE_DIR / 'templates'
+        ],
+```
+
 Configurar pasta de arquivos estáticos settings.py
 ``` py
 STATICFILES_DIRS = [
@@ -519,12 +527,13 @@ from django import forms
 from tempus_dominus.widgets import DatePicker # Verificar instalação tempus dominus
 from meu_app.escolhas import lista_de_escolhas
 from meu_app.validation import * # Verificar arquivo validation.py
+from datetime import datetime # Utilizado em campo_desabilitado
 
 class MinhaClasseForms(forms.Form):
 	campo_texto_1 = forms.CharField(label='Nome a ser exibido', max_length=100)
 	campo_texto_2 = forms.CharField(label='Nome a ser exibido', max_length=100)
 	campo_data = form.DateField(label='Nome a ser exibido', widget=DatePicker()) # tempus dominus
-	campo_desabilitado = form.CharField(label='Nome a ser exibido', max_length=100, disable=True)
+	campo_desabilitado = form.CharField(label='Nome a ser exibido', max_length=100, disable=True, initial=datetime.today)
 	campo_escolhas = form.ChoiceField(label='Nome a ser exibido', choices=lista_de_escolhas)
 	campo_email = forms.EmailField(label='Nome a ser exibido', max_lenght=150),
 	campo_texto = forms.CharField( # Campo de escolhas
