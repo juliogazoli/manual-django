@@ -116,6 +116,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    
     'meu_app.apps.MeuAppConfig',
 ]
 ```
@@ -262,7 +263,7 @@ from django.urls import path
 from meu_app.views import index, outra_pagina
 
 urlpatterns = [
-	path('', index, name='index')
+	path('', index, name='index'),
 	path('outra_pagina/', outra_pagina, name='outra_pagina')
 ]
 ```
