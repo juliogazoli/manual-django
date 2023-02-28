@@ -264,7 +264,7 @@ from meu_app.views import index, outra_pagina
 
 urlpatterns = [
 	path('', index, name='index'),
-	path('outra_pagina/', outra_pagina, name='outra_pagina')
+	path('outra_pagina/', outra_pagina, name='outra_pagina'),
 ]
 ```
 
